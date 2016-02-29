@@ -11,6 +11,30 @@ var through     = require('through2'),
     mime        = require('mime')
 ;
 
+/*
+* Recursively merge properties of two objects 
+*/
+var extend = function (object, overload) {
+    for (var property in overload) {
+        if (overload.hasOwnProperty(property)) {
+            try {
+                if (overload[property].constructor == Object) {
+                    object[property] = extend(
+                        object[property],
+                        overload[property]
+                    );
+                } else {
+                    object[property] = overload[property];
+                }
+            } catch(e) {
+                object[property] = overload[property];
+            }
+        }
+    }
+
+    return object;
+}
+
 var internalize = function (type, data) {
     return through.obj(function (file, enc, callback) {
         var inputString = null,
@@ -103,39 +127,36 @@ var compress = function (data) {
                 }
             }
 
-            var parts = {
-                "head": inputString.replace(
-                    new RegExp(
-                        '[\\s\\S]*' +
-                        delimiterHeadStart +
-                        '([\\s\\S]*)' +
-                        delimiterHeadStop +
-                        '[\\s\\S]*'
-                    , 'g'),
-                    '$1'
-                ),
-                "body": inputString.replace(
-                    new RegExp(
-                        '[\\s\\S]*' +
-                        delimiterBodyStart +
-                        '([\\s\\S]*)' +
-                        delimiterBodyStop +
-                        '[\\s\\S]*'
-                    , 'g'),
-                    '$1'
-                ),
-            };
+            var parts = {};
+            for (var i in data.delimiters) {
+                if (data.delimiters.hasOwnProperty(i)) {
+                    var delimiter = data.delimiters[i];
+                    parts[i] = inputString.replace(
+                        new RegExp(
+                            '[\\s\\S]*' +
+                            delimiter.start +
+                            '([\\s\\S]*)' +
+                            delimiter.stop +
+                            '[\\s\\S]*'
+                        , 'g'),
+                        '$1'
+                    );
+                }
+            }
 
+            // In two times to be more readable
             var compressed = {};
-            compressed.version = data.version || 'undefined';
-            compressed.head = LZString.compressToBase64([
-                JSON.stringify(parts['head'].split('\n')),
-                '.join(\'\\n\')'
-            ].join(''));
-            compressed.body = LZString.compressToBase64([
-                JSON.stringify(parts['body'].split('\n')),
-                '.join(\'\\n\')'
-            ].join(''));
+            for (var i in parts) {
+                if (parts.hasOwnProperty(i)) {
+                    compressed[i] = LZString.compressToBase64([
+                        JSON.stringify(parts[i].split('\n')),
+                        '.join(\'\\n\')'
+                    ].join(''));
+                }
+            }
+            if (data.data) {
+                compressed = extend(compressed, data.data);
+            }
 
             result = JSON.stringify(compressed);
 
