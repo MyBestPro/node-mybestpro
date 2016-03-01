@@ -8,7 +8,8 @@ var through     = require('through2'),
     fs          = require('fs'),
     glob        = require('glob'),
     LZString    = require('lz-string'),
-    mime        = require('mime')
+    mime        = require('mime'),
+    path        = require('path')
 ;
 
 /*
@@ -61,6 +62,9 @@ var internalize = function (type, data) {
                     break;
                 case 'resources':
                     result = _internalizeResources(inputString, data);
+                    break;
+                case 'translations':
+                    result = _internalizeTranslations(inputString, data);
                     break;
                 default:
                     this.emit(
@@ -321,6 +325,42 @@ var _internalizeResources = function (string, data) {
         }
     );
 }
+
+var _internalizeTranslations = function (string, data) {
+    var source_folder  = data.source_folder || '',
+        delimiter      = data.delimiter || '//#### ####//';
+
+    return string.replace(
+        delimiter,
+        function (match, offset, string) {
+            var tpl = '//TRANSLATIONS\n$translateProvider';
+            glob.sync(source_folder + '/**/*.json').forEach(
+                function(filePath) {
+                    var locale = path.basename(
+                        filePath,
+                        path.extname(filePath)
+                    );
+                    gutil.log(
+                        gutil.colors.yellow(
+                            '[_internalizeTranslations - IT1] - ' + 
+                            'write translation for ' + locale
+                        )
+                    );
+                    tpl += [
+                        '.translations(',
+                        '\'' + locale + '\'',
+                        fs.readFileSync(filePath, 'utf8'),
+                        ')',
+                    ].join('');
+                }
+            );
+            tpl += ';\n';
+
+            return tpl;
+        }
+    );
+}
+
 
 var MyBestPro = {
     internalize: internalize,
