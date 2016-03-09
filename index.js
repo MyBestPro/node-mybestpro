@@ -348,7 +348,7 @@ var _internalizeTranslations = function (string, data) {
                     );
                     tpl += [
                         '.translations(',
-                        '\'' + locale + '\'',
+                        '\'' + locale + '\', ',
                         fs.readFileSync(filePath, 'utf8'),
                         ')',
                     ].join('');
