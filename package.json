@@ -2,7 +2,7 @@
   "name": "node-mybestpro",
   "version": "1.2.0",
   "description": "Package of MyBestPro helpers for Node",
-  "private": true,
+  "private": false,
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,7 +16,7 @@
     "Helpers"
   ],
   "author": "Damien JARRY",
-  "license": "BSD",
+  "license": "GNU v3",
   "dependencies": {
     "through2": "~2.0.1",
     "gulp-util": "~3.0.7",
